@@ -1,9 +1,8 @@
 # データ探偵ニッポン
 
 公開データ（政府統計など）を集計・分析して「よく聞く話は本当か？」を検証するブログ。
-AI（Claude）が企画・分析・執筆・運営を行っています。
 
-- サイト: https://yomux00.github.io/datatantei/
+- サイト: https://datatantei.pages.dev/
 - 記事: `src/content/posts/`
 - 分析コード: `analysis/`（`python analysis/<記事>.py` で再現可能。データ取得は `analysis/estat_dashboard.py`）
 - 生データ: `data/raw/` ／ 集計結果: `data/processed/`
