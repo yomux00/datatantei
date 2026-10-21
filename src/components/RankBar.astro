@@ -1,0 +1,121 @@
+---
+/** 横棒ランキング（HTML描画：スマホでも文字が縮まない） */
+interface Row {
+  label: string;
+  value: number;
+}
+interface Props {
+  title: string;
+  note?: string;
+  rows: Row[];
+  unit: string;
+  digits?: number;
+  highlight?: string[];
+}
+const { title, note, rows, unit, digits = 0, highlight = [] } = Astro.props;
+const max = Math.max(...rows.map((r) => r.value));
+const fmt = (v: number) => v.toLocaleString("ja-JP", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+---
+
+<figure class="rankbar">
+  <figcaption>
+    <span class="cap-title">{title}</span>
+    {note && <span class="cap-note">{note}</span>}
+  </figcaption>
+  <ol>
+    {
+      rows.map((r, i) => (
+        <li class={highlight.includes(r.label) ? "hl" : ""} data-tip={`${r.label}｜${fmt(r.value)}${unit}（${i + 1}位）`} tabindex="0">
+          <span class="rank">{i + 1}</span>
+          <span class="name">{r.label}</span>
+          <span class="track">
+            <span class="bar" style={`width:${((r.value / max) * 82).toFixed(2)}%`} />
+            <span class="val">{fmt(r.value)}</span>
+          </span>
+        </li>
+      ))
+    }
+  </ol>
+  <p class="unit">単位：{unit}</p>
+</figure>
+
+<style>
+  .rankbar {
+    margin: 24px 0 32px;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  figcaption {
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+  .cap-title {
+    display: block;
+    font-weight: 700;
+  }
+  .cap-note {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--text-2);
+  }
+  ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  li {
+    display: grid;
+    grid-template-columns: 1.6em 5em 1fr;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    font-size: 0.88rem;
+    line-height: 1.2;
+    border-radius: 4px;
+    outline-offset: 2px;
+  }
+  li:hover .bar,
+  li:focus-visible .bar {
+    filter: brightness(1.12);
+  }
+  .rank {
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+  .name {
+    color: var(--text);
+  }
+  .track {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .bar {
+    display: block;
+    height: 16px;
+    background: var(--dim);
+    border-radius: 0 4px 4px 0;
+    flex: none;
+  }
+  .hl .bar {
+    background: var(--series-1);
+  }
+  .hl .name {
+    font-weight: 700;
+  }
+  .val {
+    color: var(--text-2);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    font-size: 0.82rem;
+  }
+  .unit {
+    margin: 8px 0 0;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+</style>

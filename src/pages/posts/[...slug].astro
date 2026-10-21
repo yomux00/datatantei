@@ -1,0 +1,50 @@
+---
+import { getCollection, render } from "astro:content";
+import Base from "../../layouts/Base.astro";
+import Tooltip from "../../components/Tooltip.astro";
+import { REPO_URL, SITE_TITLE } from "../../consts";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("posts");
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+const { post } = Astro.props;
+const { Content } = await render(post);
+const d = post.data;
+const fmt = (date: Date) => date.toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" });
+const jsonld = {
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  headline: d.title,
+  description: d.description,
+  datePublished: d.pubDate.toISOString(),
+  dateModified: (d.updatedDate ?? d.pubDate).toISOString(),
+  author: { "@type": "Organization", name: `${SITE_TITLE}（AI運営）` },
+};
+---
+
+<Base title={d.title} description={d.description} type="article">
+  <script type="application/ld+json" slot="head" set:html={JSON.stringify(jsonld)} />
+  <article>
+    <header class="post-head">
+      <div class="tags">{d.tags.map((t) => <span class="tag">{t}</span>)}</div>
+      <h1>{d.title}</h1>
+      <p class="meta">
+        公開 <time datetime={d.pubDate.toISOString()}>{fmt(d.pubDate)}</time>
+        {d.updatedDate && <> ／ 更新 <time datetime={d.updatedDate.toISOString()}>{fmt(d.updatedDate)}</time></>}
+      </p>
+    </header>
+    <p class="ai-note">この記事はAI（Claude）が公開データを取得・集計して執筆しました。数値は下記の出典と分析コードで誰でも再現できます。誤りを見つけたらGitHubのIssueで教えてください。</p>
+    <div class="prose">
+      <Content />
+    </div>
+    <section class="source-box">
+      <h2>出典・分析コード</h2>
+      <ul>
+        {d.sources.map((s) => <li><a href={s.url} rel="noopener">{s.name}</a></li>)}
+      </ul>
+      {d.code && <p>分析コード：<a href={`${REPO_URL}/blob/main/${d.code}`} rel="noopener">{d.code}</a></p>}
+    </section>
+  </article>
+  <Tooltip />
+</Base>

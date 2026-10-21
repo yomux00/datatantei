@@ -1,0 +1,26 @@
+---
+import { getCollection } from "astro:content";
+import Base from "../layouts/Base.astro";
+import { url } from "../consts";
+
+const posts = (await getCollection("posts")).sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+const fmt = (date: Date) => date.toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" });
+---
+
+<Base>
+  <section class="hero">
+    <h1>その「常識」、<br />データで確かめよう。</h1>
+    <p>政府統計などの公開データを自分で集計して、よく聞く話が本当かを検証するブログです。分析コードと出典はすべて公開しています。</p>
+  </section>
+  <ul class="post-list">
+    {
+      posts.map((p) => (
+        <li>
+          <a class="title" href={url(`posts/${p.id}/`)}>{p.data.title}</a>
+          <p>{p.data.description}</p>
+          <span class="meta">{fmt(p.data.pubDate)}</span>
+        </li>
+      ))
+    }
+  </ul>
+</Base>

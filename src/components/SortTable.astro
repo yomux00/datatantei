@@ -1,0 +1,128 @@
+---
+/** 47都道府県の全データ表（列見出しクリックで並べ替え） */
+interface Col {
+  key: string;
+  label: string;
+  digits?: number;
+}
+interface Props {
+  caption: string;
+  rows: Record<string, string | number>[];
+  labelKey: string;
+  cols: Col[];
+}
+const { caption, rows, labelKey, cols } = Astro.props;
+const fmt = (v: number, d = 0) => v.toLocaleString("ja-JP", { minimumFractionDigits: d, maximumFractionDigits: d });
+---
+
+<details class="sorttable">
+  <summary>{caption}（クリックで開く）</summary>
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col"><button type="button" data-col="0" data-type="text">都道府県</button></th>
+          {cols.map((c, i) => <th scope="col"><button type="button" data-col={i + 1}>{c.label}</button></th>)}
+        </tr>
+      </thead>
+      <tbody>
+        {
+          rows.map((r) => (
+            <tr>
+              <th scope="row">{r[labelKey]}</th>
+              {cols.map((c) => (
+                <td data-v={r[c.key]}>{fmt(Number(r[c.key]), c.digits)}</td>
+              ))}
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+</details>
+
+<style>
+  .sorttable {
+    margin: 24px 0 32px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+  }
+  summary {
+    cursor: pointer;
+    padding: 12px 16px;
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  .scroll {
+    overflow-x: auto;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+  }
+  th,
+  td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--grid);
+    white-space: nowrap;
+  }
+  td {
+    text-align: right;
+  }
+  tbody th {
+    text-align: left;
+    font-weight: 400;
+  }
+  thead th {
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    z-index: 1;
+  }
+  thead button {
+    all: unset;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: var(--text-2);
+  }
+  thead button:focus-visible {
+    outline: 2px solid var(--accent);
+  }
+  thead button[aria-sort="descending"]::after {
+    content: " ▼";
+  }
+  thead button[aria-sort="ascending"]::after {
+    content: " ▲";
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLTableElement>(".sorttable table").forEach((table) => {
+    const tbody = table.tBodies[0];
+    table.querySelectorAll<HTMLButtonElement>("thead button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const col = Number(btn.dataset.col);
+        const desc = btn.getAttribute("aria-sort") !== "descending";
+        table.querySelectorAll("thead button").forEach((b) => b.removeAttribute("aria-sort"));
+        btn.setAttribute("aria-sort", desc ? "descending" : "ascending");
+        const key = (tr: HTMLTableRowElement) => {
+          const cell = tr.cells[col];
+          return btn.dataset.type === "text" ? cell.textContent ?? "" : Number(cell.dataset.v);
+        };
+        [...tbody.rows]
+          .sort((a, b) => {
+            const ka = key(a), kb = key(b);
+            const c = typeof ka === "number" ? (ka as number) - (kb as number) : String(ka).localeCompare(String(kb), "ja");
+            return desc ? -c : c;
+          })
+          .forEach((tr) => tbody.appendChild(tr));
+      });
+    });
+  });
+</script>

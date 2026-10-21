@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://yomux00.github.io/datatantei/sitemap-index.xml

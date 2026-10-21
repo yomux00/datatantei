@@ -1,0 +1,230 @@
+---
+/** 散布図（HTML+％配置：スマホでも文字サイズを保つ） */
+type Pos = "r" | "l" | "t" | "b";
+interface Point {
+  label: string;
+  x: number;
+  y: number;
+}
+interface Props {
+  title: string;
+  note?: string;
+  points: Point[];
+  x: { label: string; unit: string; min: number; max: number; step: number };
+  y: { label: string; unit: string; min: number; max: number; step: number };
+  /** 強調してラベルを付ける点と、ラベルの位置 */
+  labels?: Record<string, Pos>;
+  hlName?: string;
+  baseName?: string;
+}
+const { title, note, points, x, y, labels = {}, hlName = "注目の県", baseName = "その他の都道府県" } = Astro.props;
+const px = (v: number) => ((v - x.min) / (x.max - x.min)) * 100;
+const py = (v: number) => ((v - y.min) / (y.max - y.min)) * 100;
+const ticks = (a: { min: number; max: number; step: number }) => {
+  const out: number[] = [];
+  for (let v = a.min; v <= a.max + 1e-9; v += a.step) out.push(+v.toFixed(6));
+  return out;
+};
+const n = (v: number) => v.toLocaleString("ja-JP");
+const sorted = [...points].sort((a, b) => Number(a.label in labels) - Number(b.label in labels));
+const hasHl = Object.keys(labels).length > 0;
+---
+
+<figure class="scatter">
+  <figcaption>
+    <span class="cap-title">{title}</span>
+    {note && <span class="cap-note">{note}</span>}
+  </figcaption>
+  {
+    hasHl && (
+      <div class="legend" aria-hidden="true">
+        <span><i class="sw hl" />{hlName}</span>
+        <span><i class="sw" />{baseName}</span>
+      </div>
+    )
+  }
+  <div class="frame">
+    <span class="ylab">{y.label}（{y.unit}）</span>
+    <div class="plot">
+      {ticks(y).map((t) => (
+        <>
+          <span class="gy" style={`bottom:${py(t)}%`} />
+          <span class="ty" style={`bottom:${py(t)}%`}>{n(t)}</span>
+        </>
+      ))}
+      {ticks(x).map((t) => (
+        <span class="tx" style={`left:${px(t)}%`}>{n(t)}</span>
+      ))}
+      {sorted.map((p) => {
+        const pos = labels[p.label];
+        return (
+          <span
+            class={`dot${pos ? " hl" : ""}`}
+            style={`left:${px(p.x)}%;bottom:${py(p.y)}%`}
+            data-tip={`${p.label}｜${x.label} ${n(p.x)}${x.unit}・${y.label} ${n(p.y)}${y.unit}`}
+            tabindex="0"
+          >
+            {pos && <span class={`lab lab-${pos}`}>{p.label}</span>}
+          </span>
+        );
+      })}
+    </div>
+    <span class="xlab">{x.label}（{x.unit}）</span>
+  </div>
+</figure>
+
+<style>
+  .scatter {
+    margin: 24px 0 32px;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  figcaption {
+    margin-bottom: 8px;
+    line-height: 1.5;
+  }
+  .cap-title {
+    display: block;
+    font-weight: 700;
+  }
+  .cap-note {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--text-2);
+  }
+  .legend {
+    display: flex;
+    gap: 16px;
+    font-size: 0.8rem;
+    color: var(--text-2);
+    margin-bottom: 8px;
+  }
+  .sw {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--dim);
+    margin-right: 6px;
+    vertical-align: -1px;
+  }
+  .sw.hl {
+    background: var(--series-1);
+  }
+  .frame {
+    position: relative;
+    padding: 22px 8px 44px 48px;
+  }
+  .ylab {
+    position: absolute;
+    top: 0;
+    left: 0;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .xlab {
+    position: absolute;
+    right: 8px;
+    bottom: 0;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .plot {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    border-left: 1px solid var(--axis);
+    border-bottom: 1px solid var(--axis);
+  }
+  @media (max-width: 520px) {
+    .plot {
+      aspect-ratio: 1 / 1;
+    }
+  }
+  .gy {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--grid);
+  }
+  .ty {
+    position: absolute;
+    white-space: nowrap;
+    left: -6px;
+    transform: translate(-100%, 50%);
+    font-size: 0.72rem;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .tx {
+    position: absolute;
+    white-space: nowrap;
+    bottom: -8px;
+    transform: translate(-50%, 100%);
+    font-size: 0.72rem;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .dot {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    margin: 0 0 -6px -6px;
+    border-radius: 50%;
+    background: var(--dim);
+    box-shadow: 0 0 0 2px var(--surface);
+    cursor: default;
+  }
+  .dot::before {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+  }
+  .dot.hl {
+    background: var(--series-1);
+    z-index: 1;
+  }
+  .dot:hover,
+  .dot:focus-visible {
+    z-index: 2;
+    outline: 2px solid var(--text);
+    outline-offset: 1px;
+  }
+  .lab {
+    position: absolute;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+    line-height: 1;
+    pointer-events: none;
+    text-shadow:
+      0 0 3px var(--surface),
+      0 0 3px var(--surface);
+  }
+  .lab-r {
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .lab-l {
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .lab-t {
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .lab-b {
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+</style>

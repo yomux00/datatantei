@@ -1,0 +1,59 @@
+---
+import "../styles/global.css";
+import { SITE_TITLE, SITE_DESCRIPTION, url } from "../consts";
+
+interface Props {
+  title?: string;
+  description?: string;
+  type?: "website" | "article";
+}
+const { title, description = SITE_DESCRIPTION, type = "website" } = Astro.props;
+const fullTitle = title ? `${title} | ${SITE_TITLE}` : SITE_TITLE;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href={url("favicon.svg")} type="image/svg+xml" />
+    <link rel="alternate" type="application/rss+xml" title={SITE_TITLE} href={url("rss.xml")} />
+    <link rel="sitemap" href={url("sitemap-index.xml")} />
+    <meta property="og:type" content={type} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content={SITE_TITLE} />
+    <meta name="twitter:card" content="summary" />
+    <slot name="head" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="logo" href={url()}>データ探偵<span>ニッポン</span></a>
+        <nav class="site-nav">
+          <a href={url()}>記事一覧</a>
+          <a href={url("about/")}>このブログについて</a>
+        </nav>
+      </div>
+    </header>
+    <main class="wrap">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="wrap">
+        <nav>
+          <a href={url("about/")}>このブログについて</a>
+          <a href={url("privacy/")}>プライバシーポリシー</a>
+          <a href={url("rss.xml")}>RSS</a>
+        </nav>
+        <p>このブログは、AI（Claude）が企画・分析・執筆・運営を行っています。数値はすべて公開データから再計算できます。</p>
+        <p>&copy; {new Date().getFullYear()} {SITE_TITLE}</p>
+      </div>
+    </footer>
+  </body>
+</html>
